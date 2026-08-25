@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Vídeo</title>
+<style>
+html,body{
+  margin:0;padding:0;width:100%;height:100%;
+  overflow:hidden;background:#000;
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+}
+#stage{position:absolute;inset:0;background:#000;}
+#player{position:absolute;inset:0;width:100%;height:100%;}
+/* Impide que el alumno pulse controles, logos o enlaces del propio YouTube. */
+#shield{
+  position:absolute;inset:0;z-index:10;
+  cursor:pointer;
+  background:transparent;
+}
+#playButton{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  z-index:20;width:104px;height:104px;border-radius:52px;
+  border:3px solid rgba(255,255,255,.95);
+  background:rgba(0,0,0,.58);color:#fff;
+  font-size:46px;line-height:96px;text-align:center;
+  padding:0 0 0 7px;
+  -webkit-tap-highlight-color:transparent;
+}
+#hint{
+  position:absolute;left:50%;bottom:7%;transform:translateX(-50%);
+  z-index:20;color:#fff;background:rgba(0,0,0,.58);
+  border-radius:18px;padding:8px 14px;font-size:15px;
+  opacity:.95;pointer-events:none;
+}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="player"></div>
+  <div id="shield" aria-label="Reproducir o pausar vídeo"></div>
+  <button id="playButton" aria-label="Reproducir">▶</button>
+  <div id="hint">Toca la pantalla para reproducir o pausar</div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+let player;
+let ready = false;
+const btn = document.getElementById('playButton');
+const shield = document.getElementById('shield');
+const hint = document.getElementById('hint');
+
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('player', {
+    width: '100%',
+    height: '100%',
+    videoId: 'YIcwPha4lEA',
+    playerVars: {
+      controls: 0,
+      disablekb: 1,
+      fs: 0,
+      rel: 0,
+      playsinline: 1,
+      iv_load_policy: 3,
+      cc_load_policy: 0,
+      autoplay: 0
+    },
+    events: {
+      onReady: function() { ready = true; },
+      onStateChange: function(e) {
+        if (e.data === YT.PlayerState.PLAYING) {
+          btn.classList.add('hidden');
+          hint.classList.add('hidden');
+        } else if (e.data === YT.PlayerState.PAUSED) {
+          btn.textContent = '▶';
+          btn.classList.remove('hidden');
+        } else if (e.data === YT.PlayerState.ENDED) {
+          btn.textContent = '↻';
+          btn.classList.remove('hidden');
+          hint.textContent = 'Toca para volver a reproducir';
+          hint.classList.remove('hidden');
+        }
+      }
+    }
+  });
+}
+
+function togglePlayback() {
+  if (!ready) return;
+  const state = player.getPlayerState();
+  if (state === YT.PlayerState.PLAYING) {
+    player.pauseVideo();
+  } else {
+    player.playVideo();
+  }
+}
+shield.addEventListener('click', togglePlayback);
+shield.addEventListener('touchend', function(e){ e.preventDefault(); togglePlayback(); }, {passive:false});
+btn.addEventListener('click', function(e){ e.stopPropagation(); togglePlayback(); });
+btn.addEventListener('touchend', function(e){ e.preventDefault(); e.stopPropagation(); togglePlayback(); }, {passive:false});
+
+/* El iframe llena siempre todo el área útil del widget. */
+window.addEventListener('resize', function(){
+  if (ready && player.setSize) player.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
